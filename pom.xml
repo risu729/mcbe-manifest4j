@@ -6,8 +6,7 @@
   <groupId>risu729</groupId>
   <artifactId>mcbe-manifest4j</artifactId>
   <version>1.0.0</version>
-  <packaging>jar</packaging>
-  
+  <packaging>jar</packaging
 
   <name>${project.artifactId}</name>
   <url>https://github.com/risu-minecraft/${project.artifactId}</url>
