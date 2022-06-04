@@ -5,20 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.UUID;
 
-import com.google.gson.annotations.SerializedName;
+import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
-import risu729.mcbe.manifest4j.gson.ManifestGson;
-
-public class Module_ implements Comparable<Module_> {
+public final class Module_ implements Comparable<Module_> {
 
   static final Set<EnumSet<Type>> PERMITTED_TYPE_SETS = Set.of(
       EnumSet.of(Type.RESOURCES),
@@ -27,13 +26,6 @@ public class Module_ implements Comparable<Module_> {
       EnumSet.of(Type.SKIN_PACK));
 
   private static final Language DEFAULT_LANGUAGE = Language.JAVASCRIPT;
-
-  private static final NullsFirstComparator<Module_> COMPARATOR = NullsFirstComparator.comparing(Module_::getType)
-      .thenComparing(Module_::getUUID)
-      .thenComparing(Module_::getVersion)
-      .thenComparing(Module_::getLanguage)
-      .thenComparing(Module_::getEntry)
-      .thenComparing(Module_::getDescription);
 
   // necessary
   // DATA, CLIENT_DATA, INTERFACE, and SCRIPT can be put in the same pack
@@ -85,11 +77,23 @@ public class Module_ implements Comparable<Module_> {
   }
 
   public enum Language {
-    @SerializedName("JavaScript")
-    JAVASCRIPT
+    JAVASCRIPT("js");
+
+    private final String extension;
+
+    private Language(String extension) {
+      this.extension = extension;
+    }
+
+    private String getExtension() {
+      return extension;
+    }
   }
 
   public static class Builder {
+
+    private static final Pattern FILE_NAME_REGEX = Pattern.compile("^(?!^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*$|$))([^<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f][^<>:\"/\\\\\\|\\?\\*\\x00-\\x1f\\x7f]{0,253}[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f]|[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f])$");
+    
     private Type type;
     private String description;
     private UUID uuid;
@@ -115,9 +119,6 @@ public class Module_ implements Comparable<Module_> {
     }
 
     public Builder description(String description) {
-      if (description == null || description.isBlank()) {
-        description = null;
-      }
       this.description = description;
       return this;
     }
@@ -142,33 +143,26 @@ public class Module_ implements Comparable<Module_> {
         this.entry = null;
         return this;
       }
-      entry = entry.normalize();
-      if (entry.toString().isBlank()) {
-        throw new IllegalArgumentException("entry must not be effectively empty : " + entry);
-      }
-      if (!FileSystems.getDefault()
-          .getPathMatcher("glob:*.js")
-          .matches(entry.getFileName())) {
-        throw new IllegalArgumentException(
-            "extension of entry must be .js : " + entry.toString());
-      }
       final var scripts = Path.of("scripts");
-      for (int i = 0; i < entry.getNameCount(); i++) {
-        if (entry.getName(i).equals(scripts)) {
-          this.entry = entry.subpath(i, entry.getNameCount());
+      for (int i = 0; i < 2; i++) {
+        entry = switch (i) {
+          case 0 -> entry.normalize();
+          case 1 -> scripts.relativize(entry);
+          default -> throw new AssertionError();
+        };
+        if (entry.getNameCount() == 1) {
+          if (!FILE_NAME_REGEX.matcher(entry.toString()).matches()) {
+            throw new IllegalArgumentException("invalid file name : " + entry);
+          }
+          this.entry = scripts.resolve(entry);
           return this;
         }
       }
-      if (entry.isAbsolute()) {
-        throw new IllegalArgumentException(
-            "entry must a file in \"scripts\" : " + entry.toString());
-      }
-      this.entry = scripts.resolve(entry);
-      return this;
+      throw new IllegalArgumentException("entry must be a file directly under \"scripts\" : " + entry);
     }
 
     public Module_ build() {
-      Objects.requireNonNull(type, "type must not be null");
+      Objects.requireNonNull(type, "type is necessary");
       if (uuid == null) {
         uuid = UUID.randomUUID();
       }
@@ -179,7 +173,14 @@ public class Module_ implements Comparable<Module_> {
         if (language == null) {
           language = DEFAULT_LANGUAGE;
         }
-        Objects.requireNonNull(entry, "entry must not be null when type is script");
+        Objects.requireNonNull(entry, "entry is necessary when type is script");
+        if (!FileSystems.getDefault()
+            .getPathMatcher("glob:*." + language.getExtension())
+            .matches(entry.getFileName())) {
+          throw new IllegalStateException(
+              "extension of entry must be " + language.getExtension()
+                  + " when language is " + language + " : " + entry);
+        }
       } else {
         if (language != null) {
           throw new IllegalStateException(
@@ -205,7 +206,12 @@ public class Module_ implements Comparable<Module_> {
 
   @Override
   public int compareTo(Module_ other) {
-    return COMPARATOR.compare(this, other);
+    if (equals(other)) {
+      return 0;
+    }
+    return type != other.type ? type.compareTo(other.type)
+        : uuid.equals(other.uuid) ? uuid.compareTo(other.uuid)
+            : version.compareTo(other.version);
   }
 
   @Override
@@ -214,28 +220,20 @@ public class Module_ implements Comparable<Module_> {
       return true;
     }
     return (obj instanceof Module_ other)
-        && type == other.type
-        && Objects.equals(description, other.description)
         && Objects.equals(uuid, other.uuid)
-        && Objects.equals(version, other.version)
-        && language == other.language
-        && Objects.equals(entry, other.entry);
+        && Objects.equals(version, other.version);
   }
 
   @Override
   public int hashCode() {
     int hash = 1;
-    hash = hash * 31 + Objects.hashCode(type);
-    hash = hash * 31 + Objects.hashCode(description);
     hash = hash * 31 + Objects.hashCode(uuid);
     hash = hash * 31 + Objects.hashCode(version);
-    hash = hash * 31 + Objects.hashCode(language);
-    hash = hash * 31 + Objects.hashCode(entry);
     return hash;
   }
 
   @Override
   public String toString() {
-    return ManifestGson.gsonSerializeNulls().toJson(this);
+    return ManifestGson.SERIALIZE_NULLS.toJson(this);
   }
 }

@@ -5,30 +5,28 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.function.Predicate;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.TreeSet;
 
-import risu729.mcbe.manifest4j.gson.ManifestGson;
+import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
-public class Metadata {
+public final class Metadata {
 
-  private final SortedSet<String> authors;
+  private final TreeSet<String> authors;
   private final URL url;
   private final String license;
-  private final GeneratedWith generatedWith;
+  private final TreeSet<GeneratedWith> generatedWith;
 
-  public SortedSet<String> getAuthors() {
-    return authors;
+  @SuppressWarnings("unchecked")
+  public TreeSet<String> getAuthors() {
+    return (TreeSet<String>) authors.clone();
   }
 
   public URL getURL() {
@@ -39,35 +37,35 @@ public class Metadata {
     return license;
   }
 
-  public GeneratedWith getGeneratedWith() {
-    return generatedWith;
+  @SuppressWarnings("unchecked")
+  public TreeSet<GeneratedWith> getGeneratedWith() {
+    return (TreeSet<GeneratedWith>) generatedWith.clone();
   }
 
-  public boolean isEmpty() {
-    return authors == null
-        && url == null
-        && license == null
-        && generatedWith == null;
-  }
-
-  public static class GeneratedWith {
-    private static final SortedSet<SemVer> DEFAULT_VERSIONS = new TreeSet<>(Set.of(SemVer.DEFAULT));
-    // necessary, must be 32 characters maxmum
+  public static final class GeneratedWith implements Comparable<GeneratedWith> {
+    
+    private static final TreeSet<SemVer> DEFAULT_VERSIONS = new TreeSet<>(Set.of(SemVer.DEFAULT));
+    
+    // necessary, must be 32 characters maximum
     // must contain only alphabets, numbers, underscores, and hyphens
     private final String name;
-    private final SortedSet<SemVer> versions; // necessary at least one
+    private final TreeSet<SemVer> versions; // necessary at least one
 
     public String getName() {
       return name;
     }
 
-    public SortedSet<SemVer> getVersions() {
-      return versions;
+    @SuppressWarnings("unchecked")
+    public TreeSet<SemVer> getVersions() {
+      return (TreeSet<SemVer>) versions.clone();
     }
 
     public static class Builder {
+
+      private static final Pattern NAME_REGEX = Pattern.compile("^[\\w-]{0,32}$");
+      
       private String name;
-      private SortedSet<SemVer> versions;
+      private TreeSet<SemVer> versions;
 
       public Builder() {
       }
@@ -77,20 +75,14 @@ public class Metadata {
         versions(other.versions);
       }
 
-      public Builder(Metadata metadata) {
-        this(metadata.getGeneratedWith());
-      }
-
       public Builder name(String name) {
-        if (name == null || name.isBlank()) {
-          name = null;
-        }
-        this.name = Objects.requireNonNull(name, "name must not be null");
-        if (name.length() > 32 || !name.matches("^[\\w-]+$")) {
+        Objects.requireNonNull(name, "name must not be null");
+        if (!NAME_REGEX.matcher(name).matches()) {
           throw new IllegalArgumentException(
               "name must be 32 characters maximum and must contain only alphabets, numbers, underscores, and hyphens : "
                   + name);
         }
+        this.name = name;
         return this;
       }
 
@@ -108,22 +100,17 @@ public class Metadata {
       }
 
       public Builder addVersions(Collection<SemVer> versions) {
-        SortedSet<SemVer> versionsSet = null;
-        if (versions != null) {
-          versionsSet = versions.stream()
-              .filter(Objects::nonNull)
-              .collect(Collectors.toCollection(TreeSet::new));
-          if (versionsSet.isEmpty()) {
-            versionsSet = null;
-          }
-        }
-        if (this.versions == null) {
-          this.versions = versionsSet;
+        if (versions == null || versions.isEmpty()) {
           return this;
         }
-        if (versionsSet != null) {
-          this.versions.addAll(versionsSet);
+        for (var e : versions) {
+          Objects.requireNonNull(e, "version must not be null");
         }
+        if (this.versions == null) {
+          this.versions = new TreeSet<>(versions);
+          return this;
+        }
+        this.versions.addAll(versions);
         return this;
       }
 
@@ -142,39 +129,40 @@ public class Metadata {
     }
 
     @Override
+    public int compareTo(GeneratedWith other) {
+      return name.compareTo(other.name);
+    }
+
+    @Override
     public boolean equals(Object obj) {
       if (this == obj) {
         return true;
       }
       return (obj instanceof GeneratedWith other)
-          && Objects.equals(name, other.name)
-          && Objects.equals(versions, other.versions);
+          && Objects.equals(name, other.name);
     }
 
     @Override
     public int hashCode() {
-      int hash = 1;
-      hash = hash * 31 + Objects.hashCode(name);
-      hash = hash * 31 + Objects.hashCode(versions);
-      return hash;
+      return Objects.hashCode(name);
     }
 
     @Override
     public String toString() {
-      return ManifestGson.gsonSerializeNulls().toJson(this);
+      return ManifestGson.SERIALIZE_NULLS.toJson(this);
     }
   }
 
   public static class Builder {
-    private SortedSet<String> authors;
+    private TreeSet<String> authors;
     private URL url;
     private String license;
-    private GeneratedWith generatedWith;
+    private TreeSet<GeneratedWith> generatedWith;
 
     public Builder() {
     }
 
-    public Builder(final Metadata metadata) {
+    public Builder(Metadata metadata) {
       authors(metadata.authors);
       url(metadata.url);
       license(metadata.license);
@@ -195,23 +183,17 @@ public class Metadata {
     }
 
     public Builder addAuthors(Collection<String> authors) {
-      SortedSet<String> authorsSet = null;
-      if (authors != null) {
-        authorsSet = authors.stream()
-            .filter(Objects::nonNull)
-            .filter(Predicate.not(String::isBlank))
-            .collect(Collectors.toCollection(TreeSet::new));
-        if (authorsSet.isEmpty()) {
-          authorsSet = null;
-        }
-      }
-      if (this.authors == null) {
-        this.authors = authorsSet;
+      if (authors == null || authors.isEmpty()) {
         return this;
       }
-      if (authorsSet != null) {
-        this.authors.addAll(authorsSet);
+      for (var e : authors) {
+        Objects.requireNonNull(e, "author must not be null");
       }
+      if (this.authors == null) {
+        this.authors = new TreeSet<>(authors);
+        return this;
+      }
+      this.authors.addAll(authors);
       return this;
     }
 
@@ -229,15 +211,35 @@ public class Metadata {
     }
 
     public Builder license(String license) {
-      if (license == null || license.isBlank()) {
-        license = null;
-      }
       this.license = license;
       return this;
     }
 
-    public Builder generatedWith(GeneratedWith generatedWith) {
-      this.generatedWith = generatedWith;
+    public Builder generatedWith(GeneratedWith... generatedWith) {
+      return generatedWith(generatedWith == null ? null : Set.of(generatedWith));
+    }
+
+    public Builder generatedWith(Collection<GeneratedWith> generatedWith) {
+      this.generatedWith = null;
+      return addGeneratedWith(generatedWith);
+    }
+
+    public Builder addGeneratedWith(GeneratedWith... generatedWith) {
+      return addGeneratedWith(generatedWith == null ? null : Set.of(generatedWith));
+    }
+
+    public Builder addGeneratedWith(Collection<GeneratedWith> generatedWith) {
+      if (generatedWith == null || generatedWith.isEmpty()) {
+        return this;
+      }
+      for (var e : generatedWith) {
+        Objects.requireNonNull(e, "generated_with must not be null");
+      }
+      if (this.generatedWith == null) {
+        this.generatedWith = new TreeSet<>(generatedWith);
+        return this;
+      }
+      this.generatedWith.addAll(generatedWith);
       return this;
     }
 
@@ -277,6 +279,6 @@ public class Metadata {
 
   @Override
   public String toString() {
-    return ManifestGson.gsonSerializeNulls().toJson(this);
+    return ManifestGson.SERIALIZE_NULLS.toJson(this);
   }
 }

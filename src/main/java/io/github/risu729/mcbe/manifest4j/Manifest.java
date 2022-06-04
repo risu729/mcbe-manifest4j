@@ -5,33 +5,29 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.function.Function;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.TreeSet;
 
-import risu729.mcbe.manifest4j.gson.ManifestGson;
+import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
-public class Manifest {
+public final class Manifest {
 
   private static final Integer DEFAULT_FORMAT_VERSION = 2;
   private static final Integer MAX_FORMAT_VERSION = 2;
 
   private final Integer formatVersion; // necessary
   private final Header header; // necessary
-  private final SortedSet<Module_> modules; // necesarry at least one
-  private final SortedSet<Dependency> dependencies;
+  private final TreeSet<Module_> modules; // necesarry at least one
+  private final TreeSet<Dependency> dependencies;
   private final EnumSet<Capability> capabilities;
   private final Metadata metadata;
-  private final SortedSet<Subpack> subpacks;
+  private final TreeSet<Subpack> subpacks;
 
   public Integer getFormatVersion() {
     return formatVersion;
@@ -41,42 +37,46 @@ public class Manifest {
     return header;
   }
 
-  public SortedSet<Module_> getModules() {
-    return modules;
+  @SuppressWarnings("unchecked")
+  public TreeSet<Module_> getModules() {
+    return (TreeSet<Module_>) modules.clone();
   }
 
-  public SortedSet<Dependency> getDependencies() {
-    return dependencies;
+  @SuppressWarnings("unchecked")
+  public TreeSet<Dependency> getDependencies() {
+    return (TreeSet<Dependency>) dependencies.clone();
   }
 
   public EnumSet<Capability> getCapabilities() {
-    return capabilities;
+    return capabilities.clone();
   }
 
   public Metadata getMetadata() {
     return metadata;
   }
 
-  public SortedSet<Subpack> getSubpacks() {
-    return subpacks;
+  @SuppressWarnings("unchecked")
+  public TreeSet<Subpack> getSubpacks() {
+    return (TreeSet<Subpack>) subpacks.clone();
   }
 
   public String toJson() {
-    return ManifestGson.gson().toJson(this);
+    return ManifestGson.NORMAL.toJson(this);
   }
 
   public static Manifest fromJson(String json) {
-    return ManifestGson.gson().fromJson(json, Manifest.class);
+    return ManifestGson.NORMAL.fromJson(json, Manifest.class);
   }
 
   public static class Builder {
+
     private Integer formatVersion;
     private Header header;
-    private SortedSet<Module_> modules;
-    private SortedSet<Dependency> dependencies;
+    private TreeSet<Module_> modules;
+    private TreeSet<Dependency> dependencies;
     private EnumSet<Capability> capabilities;
     private Metadata metadata;
-    private SortedSet<Subpack> subpacks;
+    private TreeSet<Subpack> subpacks;
 
     public Builder() {
     }
@@ -92,14 +92,14 @@ public class Manifest {
     }
 
     public Builder formatVersion(Integer formatVersion) {
-      if (formatVersion == null
-          || (formatVersion >= 1 && formatVersion <= MAX_FORMAT_VERSION)) {
-        this.formatVersion = formatVersion;
-        return this;
+      if (formatVersion != null
+          && (formatVersion < 1 || formatVersion > MAX_FORMAT_VERSION)) {
+        throw new IllegalArgumentException(
+            "format_version must be a positive integer which is" + MAX_FORMAT_VERSION
+                + "or less : " + formatVersion);
       }
-      throw new IllegalArgumentException(
-          "format_version must be a positive integer which is" + MAX_FORMAT_VERSION
-              + "or less : " + formatVersion);
+      this.formatVersion = formatVersion;
+      return this;
     }
 
     public Builder header(Header header) {
@@ -121,7 +121,17 @@ public class Manifest {
     }
 
     public Builder addModules(Collection<Module_> modules) {
-      this.modules = addCollection(modules, this.modules);
+      if (modules == null || modules.isEmpty()) {
+        return this;
+      }
+      for (var e : modules) {
+        Objects.requireNonNull(e, "module must not be null");
+      }
+      if (this.modules == null) {
+        this.modules = new TreeSet<>(modules);
+        return this;
+      }
+      this.modules.addAll(modules);
       return this;
     }
 
@@ -139,7 +149,17 @@ public class Manifest {
     }
 
     public Builder addDependencies(Collection<Dependency> dependencies) {
-      this.dependencies = addCollection(dependencies, this.dependencies);
+      if (dependencies == null || dependencies.isEmpty()) {
+        return this;
+      }
+      for (var e : dependencies) {
+        Objects.requireNonNull(e, "dependency must not be null");
+      }
+      if (this.dependencies == null) {
+        this.dependencies = new TreeSet<>(dependencies);
+        return this;
+      }
+      this.dependencies.addAll(dependencies);
       return this;
     }
 
@@ -156,31 +176,22 @@ public class Manifest {
       return addCapabilities(capabilities == null ? null : Set.of(capabilities));
     }
 
-    public Builder addCapabilities(Collection<Capability> capabilities) {
-      EnumSet<Capability> capabilitiesSet = null;
-      if (capabilities != null) {
-        capabilitiesSet = capabilities.stream()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(
-                () -> EnumSet.noneOf(Capability.class)));
-        if (capabilitiesSet.isEmpty()) {
-          capabilitiesSet = null;
-        }
-      }
-      if (this.capabilities == null) {
-        this.capabilities = capabilitiesSet;
+    public Builder addCapabilities(Collection<Capability> capabilities) {      
+      if (capabilities == null || capabilities.isEmpty()) {
         return this;
       }
-      if (capabilitiesSet != null) {
-        this.capabilities.addAll(capabilitiesSet);
+      for (var e : capabilities) {
+        Objects.requireNonNull(e, "capability must not be null");
       }
+      if (this.capabilities == null) {
+        this.capabilities = EnumSet.copyOf(capabilities);
+        return this;
+      }
+      this.capabilities.addAll(capabilities);
       return this;
     }
 
     public Builder metadata(Metadata metadata) {
-      if (metadata == null || metadata.isEmpty()) {
-        metadata = null;
-      }
       this.metadata = metadata;
       return this;
     }
@@ -199,16 +210,27 @@ public class Manifest {
     }
 
     public Builder addSubpacks(Collection<Subpack> subpacks) {
-      this.subpacks = addCollection(subpacks, this.subpacks);
+      if (subpacks == null || subpacks.isEmpty()) {
+        return this;
+      }
+      for (var e : subpacks) {
+        Objects.requireNonNull(e, "subpack must not be null");
+      }
+      if (this.subpacks == null) {
+        this.subpacks = new TreeSet<>(subpacks);
+        return this;
+      }
+      this.subpacks.addAll(subpacks);
       return this;
     }
 
     public Manifest build() {
+      Objects.requireNonNull(header, "header is necessary");
+      Objects.requireNonNull(modules, "modules are necessary at least one");
+      
       if (formatVersion == null) {
         formatVersion = DEFAULT_FORMAT_VERSION;
       }
-      Objects.requireNonNull(header, "header must not be null");
-      Objects.requireNonNull(modules, "modules must not be null");
 
       EnumSet<Module_.Type> types = modules.stream()
           .map(Module_::getType)
@@ -238,7 +260,7 @@ public class Manifest {
       } else {
         if (header.getMinEngineVersion() != null) {
           throw new IllegalStateException(
-              "min_engine_version must be null if the fomart_version is 1 or the type of module is skin_pack or world_template : "
+              "min_engine_version must be null if the format_version is 1 or the type of module is skin_pack or world_template : "
                   + header.getMinEngineVersion());
         }
       }
@@ -269,27 +291,6 @@ public class Manifest {
 
       return new Manifest(this);
     }
-
-    private static <C> SortedSet<C> addCollection(Collection<C> addend, SortedSet<C> augend) {
-      SortedSet<C> set = null;
-      if (addend != null) {
-        set = addend.stream()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(TreeSet::new));
-        if (set.isEmpty()) {
-          set = null;
-        }
-      }
-      if (augend == null) {
-        augend = set;
-        return augend;
-      }
-      if (set != null) {
-        augend.addAll(set);
-        return augend;
-      }
-      return augend;
-    }
   }
 
   private Manifest(Builder builder) {
@@ -308,30 +309,16 @@ public class Manifest {
       return true;
     }
     return (obj instanceof Manifest other)
-        && Objects.equals(formatVersion, other.formatVersion)
-        && Objects.equals(header, other.header)
-        && Objects.equals(modules, other.modules)
-        && Objects.equals(dependencies, other.dependencies)
-        && Objects.equals(capabilities, other.capabilities)
-        && Objects.equals(metadata, other.metadata)
-        && Objects.equals(subpacks, other.subpacks);
+        && Objects.equals(header, other.header);
   }
 
   @Override
   public int hashCode() {
-    int hash = 1;
-    hash = hash * 31 + Objects.hashCode(formatVersion);
-    hash = hash * 31 + Objects.hashCode(header);
-    hash = hash * 31 + Objects.hashCode(modules);
-    hash = hash * 31 + Objects.hashCode(dependencies);
-    hash = hash * 31 + Objects.hashCode(capabilities);
-    hash = hash * 31 + Objects.hashCode(metadata);
-    hash = hash * 31 + Objects.hashCode(subpacks);
-    return hash;
+    return Objects.hashCode(header);
   }
 
   @Override
   public String toString() {
-    return ManifestGson.gsonSerializeNulls().toJson(this);
+    return ManifestGson.SERIALIZE_NULLS.toJson(this);
   }
 }

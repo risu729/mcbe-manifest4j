@@ -5,16 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
 import java.util.Objects;
 import java.util.UUID;
 
-import risu729.mcbe.manifest4j.gson.ManifestGson;
+import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
-public class Header {
-  
+public final class Header {
+
   static final Boolean DEFAULT_LOCK_TEMPLATE_OPTIONS = false;
+  private static final SemVer MIN_MCBE_VERSION = SemVer.of(1, 13, 0);
 
   private final String name; // necessary
   private final String description;
@@ -73,6 +74,7 @@ public class Header {
   }
 
   public static class Builder {
+
     private String name;
     private String description;
     private UUID uuid;
@@ -99,17 +101,11 @@ public class Header {
     }
 
     public Builder name(String name) {
-      if (name == null || name.isBlank()) {
-        name = null;
-      }
       this.name = Objects.requireNonNull(name, "name must not be null");
       return this;
     }
 
     public Builder description(String description) {
-      if (description == null || description.isBlank()) {
-        description = null;
-      }
       this.description = description;
       return this;
     }
@@ -125,12 +121,13 @@ public class Header {
     }
 
     public Builder minEngineVersion(SemVer minEngineVersion) {
-      this.minEngineVersion = minEngineVersion;
       if (minEngineVersion != null
-          && minEngineVersion.compareTo(new SemVer(1, 13, 0)) < 0) {
+          && minEngineVersion.compareTo(MIN_MCBE_VERSION) < 0) {
         throw new IllegalArgumentException(
-            "min_engine_version must be later than or equal to 1.13.0 : " + minEngineVersion);
+            "min_engine_version must be later than or equal to "
+                + MIN_MCBE_VERSION + " : " + minEngineVersion);
       }
+      this.minEngineVersion = minEngineVersion;
       return this;
     }
 
@@ -145,13 +142,13 @@ public class Header {
     }
 
     public Builder baseGameVersion(SemVer baseGameVersion) {
-      this.baseGameVersion = baseGameVersion;
       if (baseGameVersion != null
-          && baseGameVersion.compareTo(new SemVer(1, 13, 0)) < 0) {
+          && baseGameVersion.compareTo(MIN_MCBE_VERSION) < 0) {
         throw new IllegalStateException(
-            "base_game_version must be later than or equal to 1.13.0 : "
-                + baseGameVersion);
+            "base_game_version must be later than or equal to "
+                + MIN_MCBE_VERSION + " : " + baseGameVersion);
       }
+      this.baseGameVersion = baseGameVersion;
       return this;
     }
 
@@ -161,7 +158,7 @@ public class Header {
     }
 
     public Header build() {
-      Objects.requireNonNull(name, "name must not be null");
+      Objects.requireNonNull(name, "name is necessary");
       if (uuid == null) {
         uuid = UUID.randomUUID();
       }
@@ -190,34 +187,20 @@ public class Header {
       return true;
     }
     return (obj instanceof Header other)
-        && Objects.equals(name, other.name)
-        && Objects.equals(description, other.description)
         && Objects.equals(uuid, other.uuid)
-        && Objects.equals(version, other.version)
-        && Objects.equals(minEngineVersion, other.minEngineVersion)
-        && Objects.equals(platformLocked, other.platformLocked)
-        && packScope == other.packScope
-        && Objects.equals(baseGameVersion, other.baseGameVersion)
-        && Objects.equals(lockTemplateOptions, other.lockTemplateOptions);
+        && Objects.equals(version, other.version);
   }
 
   @Override
   public int hashCode() {
     int hash = 1;
-    hash = hash * 31 + Objects.hashCode(name);
-    hash = hash * 31 + Objects.hashCode(description);
     hash = hash * 31 + Objects.hashCode(uuid);
     hash = hash * 31 + Objects.hashCode(version);
-    hash = hash * 31 + Objects.hashCode(minEngineVersion);
-    hash = hash * 31 + Objects.hashCode(platformLocked);
-    hash = hash * 31 + Objects.hashCode(packScope);
-    hash = hash * 31 + Objects.hashCode(baseGameVersion);
-    hash = hash * 31 + Objects.hashCode(lockTemplateOptions);
     return hash;
   }
 
   @Override
   public String toString() {
-    return ManifestGson.gsonSerializeNulls().toJson(this);
+    return ManifestGson.SERIALIZE_NULLS.toJson(this);
   }
 }

@@ -5,12 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j.gson;
+package io.github.risu729.mcbe.manifest4j.gson;
 
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.function.Predicate;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.Gson;
@@ -22,17 +29,25 @@ import com.google.gson.TypeAdapterFactory;
 
 // based on a code from javadoc of Gson,
 // https://www.javadoc.io/doc/com.google.code.gson/gson/latest/com.google.gson/com/google/gson/TypeAdapterFactory.html
-class SnakeCaseEnum implements TypeAdapterFactory {
+final class SnakeCaseEnum implements TypeAdapterFactory {
+
+  private static final Pattern SNAKE_SEPARATOR = Pattern.compile("_+");
+  
   @Override
   @SuppressWarnings("unchecked")
   public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+    
     Class<T> rawType = (Class<T>) type.getRawType();
     if (!rawType.isEnum()) {
       return null;
     }
 
-    final Map<T, String> constantToString = new HashMap<T, String>();
-    final Map<String, T> stringToConstant = new HashMap<String, T>();
+    final Map<T, String> constantToString = new HashMap<>();
+    final Map<String, T> stringToConstant;
+
+    Map<String, T> nameToConstant = new HashMap<>();
+    Map<String, T> alternateToConstant = new HashMap<>();
+    Set<String> duplicatedAlternates = new HashSet<>();
     for (T constant : rawType.getEnumConstants()) {
       final SerializedName annotation;
       try {
@@ -42,19 +57,31 @@ class SnakeCaseEnum implements TypeAdapterFactory {
       } catch (NoSuchFieldException e) {
         throw new UndeclaredThrowableException(e);
       }
+      String str;
       if (annotation == null) {
-        String snakeCase = ManifestGson.toSnakeCase(constant.toString());
-        constantToString.put(constant, snakeCase);
-        stringToConstant.put(snakeCase, constant);
+        str = screamingSnakeToSnake(constant.toString());
       } else {
-        String serializedName = annotation.value();
-        constantToString.put(constant, serializedName);
-        stringToConstant.put(serializedName, constant);
+        str = Objects.requireNonNull(annotation.value(), "serialized name must not be null");
         for (String alternate : annotation.alternate()) {
-          stringToConstant.put(alternate, constant);
+          Objects.requireNonNull(alternate, "serialized name must not be null");
+          if (alternateToConstant.containsKey(alternate)) {
+            duplicatedAlternates.add(alternate);
+          } else {
+            alternateToConstant.put(alternate, constant);
+          }
         }
       }
+      constantToString.put(constant, str);
+      if (nameToConstant.containsKey(str)) {
+        throw new IllegalStateException("serialized names are duplicated : " + str);
+      }
+      nameToConstant.put(str, constant);
     }
+    for (var s : duplicatedAlternates) {
+      alternateToConstant.remove(s);
+    }
+    alternateToConstant.putAll(nameToConstant);
+    stringToConstant = alternateToConstant;
 
     return new TypeAdapter<T>() {
       @Override
@@ -67,5 +94,12 @@ class SnakeCaseEnum implements TypeAdapterFactory {
         writer.value(constantToString.get(value));
       }
     }.nullSafe();
+  }
+
+  private String screamingSnakeToSnake(String str) {
+    return SNAKE_SEPARATOR.splitAsStream(str)
+        .filter(Predicate.not(String::isBlank))
+        .map(s -> s.toLowerCase(Locale.ENGLISH))
+        .collect(Collectors.joining("_"));
   }
 }

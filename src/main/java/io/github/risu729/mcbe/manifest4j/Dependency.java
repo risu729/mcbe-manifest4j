@@ -5,17 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
 import java.util.Objects;
 import java.util.UUID;
 
-import risu729.mcbe.manifest4j.gson.ManifestGson;
+import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
-public class Dependency implements Comparable<Dependency> {
-
-  private static final NullsFirstComparator<Dependency> COMPARATOR = NullsFirstComparator.comparing(Dependency::getUUID)
-      .thenComparing(Dependency::getVersion);
+public final class Dependency implements Comparable<Dependency> {
 
   private final UUID uuid; // necessary
   private final SemVer version; // necessary
@@ -29,6 +26,7 @@ public class Dependency implements Comparable<Dependency> {
   }
 
   public static class Builder {
+
     private UUID uuid;
     private SemVer version;
 
@@ -50,7 +48,7 @@ public class Dependency implements Comparable<Dependency> {
     }
 
     public Builder uuid(UUID uuid) {
-      this.uuid = Objects.requireNonNull(uuid, "The UUID must not be null.");
+      this.uuid = Objects.requireNonNull(uuid, "UUID must not be null");
       return this;
     }
 
@@ -60,7 +58,7 @@ public class Dependency implements Comparable<Dependency> {
     }
 
     public Dependency build() {
-      Objects.requireNonNull(uuid, "The UUID must not be null.");
+      Objects.requireNonNull(uuid, "UUID is necessary");
       if (version == null) {
         version = SemVer.DEFAULT;
       }
@@ -75,7 +73,7 @@ public class Dependency implements Comparable<Dependency> {
 
   @Override
   public int compareTo(Dependency other) {
-    return COMPARATOR.compare(this, other);
+    return uuid.compareTo(other.uuid);
   }
 
   @Override
@@ -84,20 +82,16 @@ public class Dependency implements Comparable<Dependency> {
       return true;
     }
     return (obj instanceof Dependency other)
-        && Objects.equals(uuid, other.uuid)
-        && Objects.equals(version, other.version);
+        && Objects.equals(uuid, other.uuid);
   }
 
   @Override
   public int hashCode() {
-    int hash = 1;
-    hash = hash * 31 + Objects.hashCode(uuid);
-    hash = hash * 31 + Objects.hashCode(version);
-    return hash;
+    return Objects.hashCode(uuid);
   }
 
   @Override
   public String toString() {
-    return ManifestGson.gsonSerializeNulls().toJson(this);
+    return ManifestGson.SERIALIZE_NULLS.toJson(this);
   }
 }

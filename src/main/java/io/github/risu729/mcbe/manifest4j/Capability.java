@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j;
+package io.github.risu729.mcbe.manifest4j;
 
 public enum Capability {
   EXPERIMENTAL_CUSTOM_UI,

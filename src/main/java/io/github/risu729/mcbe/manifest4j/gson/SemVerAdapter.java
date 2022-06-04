@@ -5,37 +5,37 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j.gson;
+package io.github.risu729.mcbe.manifest4j.gson;
 
-import java.util.ArrayList;
 import java.io.IOException;
-import java.util.List;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.TypeAdapter;
 
-import risu729.mcbe.manifest4j.SemVer;
+import io.github.risu729.mcbe.manifest4j.SemVer;
 
-class SemVerTypeAdapter extends TypeAdapter<SemVer> {
+final class SemVerAdapter extends TypeAdapter<SemVer> {
 
   @Override
   public SemVer read(JsonReader reader) throws IOException {
-    List<Integer> semVer = new ArrayList<>(3);
+    int[] semVer = new int[3];
     reader.beginArray();
-    while (reader.hasNext()) {
-      semVer.add(reader.nextInt());
+    for (int n : semVer) {
+      n = reader.nextInt();
     }
     reader.endArray();
-    return new SemVer(semVer);
+    return SemVer.of(semVer[0], semVer[1], semVer[2]);
   }
 
   @Override
   public void write(JsonWriter writer, SemVer value) throws IOException {
-    writer.beginArray();
+    writer.beginArray()
+        .setIndent("");
     for (int n : value.toArray()) {
       writer.value(n);
     }
-    writer.endArray();
+    writer.endArray()
+        .setIndent("  ");
   }
 }

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package risu729.mcbe.manifest4j.gson;
+package io.github.risu729.mcbe.manifest4j.gson;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -14,7 +14,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.TypeAdapter;
 
-class PathTypeAdapter extends TypeAdapter<Path> {
+final class PathAdapter extends TypeAdapter<Path> {
 
   @Override
   public Path read(JsonReader reader) throws IOException {
