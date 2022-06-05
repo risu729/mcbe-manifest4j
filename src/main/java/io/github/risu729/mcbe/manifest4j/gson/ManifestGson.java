@@ -7,12 +7,6 @@
 
 package io.github.risu729.mcbe.manifest4j.gson;
 
-import java.nio.file.Path;
-import java.util.function.Predicate;
-import java.util.Locale;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 

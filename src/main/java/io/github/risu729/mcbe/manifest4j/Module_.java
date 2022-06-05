@@ -99,7 +99,7 @@ public final class Module_ implements Comparable<Module_> {
 
   public static class Builder {
 
-    private static final Pattern FILE_NAME_REGEX = Pattern.compile("^(?!^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*$|$))([^<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f][^<>:\"/\\\\\\|\\?\\*\\x00-\\x1f\\x7f]{0,253}[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f]|[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f])$");
+    private static final Pattern FILE_NAME_REGEX = Pattern.compile("^(?!^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*$|$))([^<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f][^<>:\"/\\\\\\|\\?\\*\\x00-\\x1f\\x7f]{0,253}[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f]|[^\\.<>:\"/\\\\\\|\\?\\*\\x00-\\x20\\x7f])$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     
     private Type type;
     private String description;
