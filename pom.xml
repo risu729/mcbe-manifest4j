@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <name>${project.artifactId}</name>
-  <url>https://github.com/risu-minecraft/${project.artifactId}</url>
+  <url>https://github.com/risu729/${project.artifactId}</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
