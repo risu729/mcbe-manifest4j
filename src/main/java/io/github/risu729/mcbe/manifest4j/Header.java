@@ -32,6 +32,10 @@ public final class Header {
   // necessary and only for when Module.type == world_template
   private final Boolean lockTemplateOptions;
 
+  public static Header of(String name) {
+    return new Builder().name(name).build();
+  }
+
   public String getName() {
     return name;
   }

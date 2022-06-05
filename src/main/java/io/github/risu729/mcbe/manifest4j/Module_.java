@@ -41,6 +41,13 @@ public final class Module_ implements Comparable<Module_> {
   // the top directory must be "scripts" and the extension must be ".js"
   private final Path entry;
 
+  public static Module_ of(Type type) {
+    return switch (type) {
+      case RESOURCES, DATA, WORLD_TEMPLATE, SKIN_PACK -> new Builder().type(type).build();
+      default -> throw new UnsupportedOperationException("specified type is not supported : " + type);
+    };
+  }
+
   public Type getType() {
     return type;
   }

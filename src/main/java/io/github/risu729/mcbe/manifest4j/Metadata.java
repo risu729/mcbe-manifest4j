@@ -43,6 +43,10 @@ public final class Metadata {
   }
 
   public static final class GeneratedWith implements Comparable<GeneratedWith> {
+
+    private static final GeneratedWith MANIFEST4J = new Builder().name("manifest4j")
+        .versions(SemVer.of(0, 2, 0))
+        .build();
     
     private static final TreeSet<SemVer> DEFAULT_VERSIONS = new TreeSet<>(Set.of(SemVer.DEFAULT));
     
@@ -50,6 +54,10 @@ public final class Metadata {
     // must contain only alphabets, numbers, underscores, and hyphens
     private final String name;
     private final TreeSet<SemVer> versions; // necessary at least one
+
+    public static GeneratedWith getManifest4j() {
+      return MANIFEST4J;
+    }
 
     public String getName() {
       return name;

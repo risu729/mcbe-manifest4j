@@ -21,8 +21,8 @@ final class SemVerAdapter extends TypeAdapter<SemVer> {
   public SemVer read(JsonReader reader) throws IOException {
     int[] semVer = new int[3];
     reader.beginArray();
-    for (int n : semVer) {
-      n = reader.nextInt();
+    for (int i = 0; i < 3; i++) {
+      semVer[i] = reader.nextInt();
     }
     reader.endArray();
     return SemVer.of(semVer[0], semVer[1], semVer[2]);

@@ -29,6 +29,18 @@ public final class Manifest {
   private final Metadata metadata;
   private final TreeSet<Subpack> subpacks;
 
+  public static Manifest of(String name, Module_.Type type) {
+    return new Builder().header(Header.of(name)).modules(Module_.of(type)).build();
+  }
+
+  public static Manifest fromJson(String json) {
+    return ManifestGson.NORMAL.fromJson(json, Manifest.class);
+  }
+
+  public String toJson() {
+    return ManifestGson.NORMAL.toJson(this);
+  }
+  
   public Integer getFormatVersion() {
     return formatVersion;
   }
@@ -58,14 +70,6 @@ public final class Manifest {
   @SuppressWarnings("unchecked")
   public TreeSet<Subpack> getSubpacks() {
     return (TreeSet<Subpack>) subpacks.clone();
-  }
-
-  public String toJson() {
-    return ManifestGson.NORMAL.toJson(this);
-  }
-
-  public static Manifest fromJson(String json) {
-    return ManifestGson.NORMAL.fromJson(json, Manifest.class);
   }
 
   public static class Builder {
