@@ -7,6 +7,7 @@
 
 package io.github.risu729.mcbe.manifest4j;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 // Follows Semantic Versioning 2.0.0 (https://semver.org) but denoting a pre-release version and build metadata is not allowed.
@@ -23,6 +24,7 @@ public final class SemVer implements Comparable<SemVer> {
   }
 
   public static SemVer fromString(String str) {
+    Objects.requireNonNull(str);
     if (!SEMVER_REGEX.matcher(str).matches()) {
       throw new IllegalArgumentException("malformed semantic verioning : " + str);
     }

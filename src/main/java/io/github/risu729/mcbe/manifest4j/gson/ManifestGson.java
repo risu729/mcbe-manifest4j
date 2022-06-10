@@ -7,10 +7,11 @@
 
 package io.github.risu729.mcbe.manifest4j.gson;
 
+import java.nio.file.Path;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import io.github.risu729.mcbe.manifest4j.Metadata;
 import io.github.risu729.mcbe.manifest4j.SemVer;
 
 public final class ManifestGson {
@@ -19,7 +20,7 @@ public final class ManifestGson {
       .setPrettyPrinting()
       .setFieldNamingStrategy(new SnakeCaseField())
       .registerTypeAdapterFactory(new SnakeCaseEnum())
-    .registerTypeAdapterFactory(new GeneratedWithSetAdapterFactory())
+      .registerTypeAdapterFactory(new GeneratedWithSetAdapterFactory())
       .registerTypeHierarchyAdapter(Path.class, new PathAdapter().nullSafe())
       .registerTypeAdapter(SemVer.class, new SemVerAdapter().nullSafe());
 

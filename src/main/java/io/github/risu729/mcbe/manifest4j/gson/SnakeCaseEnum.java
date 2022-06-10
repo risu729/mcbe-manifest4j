@@ -42,11 +42,10 @@ final class SnakeCaseEnum implements TypeAdapterFactory {
       return null;
     }
 
+    final Map<String, T> stringToConstant = new HashMap<>();
+    final Map<String, T> alternateToConstant = new HashMap<>();
     final Map<T, String> constantToString = new HashMap<>();
-    final Map<String, T> stringToConstant;
 
-    Map<String, T> nameToConstant = new HashMap<>();
-    Map<String, T> alternateToConstant = new HashMap<>();
     Set<String> duplicatedAlternates = new HashSet<>();
     for (T constant : rawType.getEnumConstants()) {
       final SerializedName annotation;
@@ -62,6 +61,9 @@ final class SnakeCaseEnum implements TypeAdapterFactory {
         str = screamingSnakeToSnake(constant.toString());
       } else {
         str = Objects.requireNonNull(annotation.value(), "serialized name must not be null");
+        if (stringToConstant.containsKey(str)) {
+          throw new IllegalStateException("serialized names are duplicated : " + str);
+        }
         for (String alternate : annotation.alternate()) {
           Objects.requireNonNull(alternate, "serialized name must not be null");
           if (alternateToConstant.containsKey(alternate)) {
@@ -72,21 +74,19 @@ final class SnakeCaseEnum implements TypeAdapterFactory {
         }
       }
       constantToString.put(constant, str);
-      if (nameToConstant.containsKey(str)) {
-        throw new IllegalStateException("serialized names are duplicated : " + str);
-      }
-      nameToConstant.put(str, constant);
+      stringToConstant.put(str, constant);
     }
-    for (var s : duplicatedAlternates) {
-      alternateToConstant.remove(s);
-    }
-    alternateToConstant.putAll(nameToConstant);
-    stringToConstant = alternateToConstant;
+    alternateToConstant.keySet().removeAll(duplicatedAlternates);
 
     return new TypeAdapter<T>() {
       @Override
       public T read(JsonReader reader) throws IOException {
-        return stringToConstant.get(reader.nextString());
+        var value = reader.nextString();
+        if (stringToConstant.containsKey(value)) {
+          return stringToConstant.get(value);
+        } else {
+          return alternateToConstant.get(value);
+        }
       }
 
       @Override
