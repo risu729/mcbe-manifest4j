@@ -15,14 +15,14 @@ import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 public final class Header {
 
   static final Boolean DEFAULT_LOCK_TEMPLATE_OPTIONS = false;
-  private static final SemVer MIN_MCBE_VERSION = SemVer.of(1, 13, 0);
+  static final SemVer MIN_MCBE_VERSION = SemVer.of(1, 13, 0);
 
   private final String name; // necessary
   private final String description;
   private final UUID uuid; // necessary
   private final SemVer version; // necessary
-  // necessary, only for, and must be later than or equal to 1.13.0
-  // when format_version is 2 and Module.type != WORLD_TEMPLATE or SKIN_PACK
+  // necessary and only for, when  Module.type != WORLD_TEMPLATE or SKIN_PACK
+  // must be later than or equal to 1.13.0 when format_version == 2
   private final SemVer minEngineVersion;
   private final Boolean platformLocked;
   private final PackScope packScope;
@@ -125,12 +125,6 @@ public final class Header {
     }
 
     public Builder minEngineVersion(SemVer minEngineVersion) {
-      if (minEngineVersion != null
-          && minEngineVersion.compareTo(MIN_MCBE_VERSION) < 0) {
-        throw new IllegalArgumentException(
-            "min_engine_version must be later than or equal to "
-                + MIN_MCBE_VERSION + " : " + minEngineVersion);
-      }
       this.minEngineVersion = minEngineVersion;
       return this;
     }
@@ -162,22 +156,15 @@ public final class Header {
     }
 
     public Header build() {
-      Objects.requireNonNull(name, "name is necessary");
-      if (uuid == null) {
-        uuid = UUID.randomUUID();
-      }
-      if (version == null) {
-        version = SemVer.DEFAULT;
-      }
       return new Header(this);
     }
   }
 
   private Header(Builder builder) {
-    this.name = builder.name;
+    this.name = Objects.requireNonNull(builder.name, "name is necessary");
     this.description = builder.description;
-    this.uuid = builder.uuid;
-    this.version = builder.version;
+    this.uuid = Objects.requireNonNullElse(builder.uuid, UUID.randomUUID());
+    this.version = Objects.requireNonNullElse(builder.version, SemVer.DEFAULT);
     this.minEngineVersion = builder.minEngineVersion;
     this.platformLocked = builder.platformLocked;
     this.packScope = builder.packScope;

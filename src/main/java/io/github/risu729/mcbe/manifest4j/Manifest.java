@@ -229,78 +229,73 @@ public final class Manifest {
     }
 
     public Manifest build() {
-      Objects.requireNonNull(header, "header is necessary");
-      Objects.requireNonNull(modules, "modules are necessary at least one");
-      
-      if (formatVersion == null) {
-        formatVersion = DEFAULT_FORMAT_VERSION;
-      }
-
-      EnumSet<Module_.Type> types = modules.stream()
-          .map(Module_::getType)
-          .collect(Collectors.toCollection(() -> EnumSet.noneOf(Module_.Type.class)));
-      for (EnumSet<Module_.Type> set : Module_.PERMITTED_TYPE_SETS) {
-        for (var type : set) {
-          if (types.contains(type)) {
-            for (var e : EnumSet.complementOf(set)) {
-              if (types.contains(e)) {
-                throw new IllegalStateException(
-                    "modules must not contain both types of : " + type + " and " + e);
-              }
-            }
-            break;
-          }
-        }
-      }
-
-      if (formatVersion == 2
-          && !(types.contains(Module_.Type.WORLD_TEMPLATE)
-              || types.contains(Module_.Type.SKIN_PACK))) {
-        if (header.getMinEngineVersion() == null) {
-          header(new Header.Builder(header)
-              .minEngineVersion(SemVer.MCBE_DEFAULT)
-              .build());
-        }
-      } else {
-        if (header.getMinEngineVersion() != null) {
-          throw new IllegalStateException(
-              "min_engine_version must be null if the format_version is 1 or the type of module is skin_pack or world_template : "
-                  + header.getMinEngineVersion());
-        }
-      }
-
-      if (types.contains(Module_.Type.WORLD_TEMPLATE)) {
-        if (header.getBaseGameVersion() == null) {
-          header(new Header.Builder(header)
-              .baseGameVersion(SemVer.MCBE_DEFAULT)
-              .build());
-        }
-        if (header.getLockTemplateOptions() == null) {
-          header(new Header.Builder(header)
-              .lockTemplateOptions(Header.DEFAULT_LOCK_TEMPLATE_OPTIONS)
-              .build());
-        }
-      } else {
-        if (header.getBaseGameVersion() != null) {
-          throw new IllegalStateException(
-              "base_game_version must be null if the type of module is not world_template : "
-                  + header.getBaseGameVersion());
-        }
-        if (header.getLockTemplateOptions() != null) {
-          throw new IllegalStateException(
-              "lock_template_options must be null if the type of modules is not world_template : "
-                  + header.getLockTemplateOptions());
-        }
-      }
-
       return new Manifest(this);
     }
   }
 
   private Manifest(Builder builder) {
-    this.formatVersion = builder.formatVersion;
-    this.header = builder.header;
+    this.formatVersion = Objects.requireNonNullElse(builder.formatVersion, DEFAULT_FORMAT_VERSION);
+
+    Objects.requireNonNull(builder.modules, "modules are necessary at least one");
+    EnumSet<Module_.Type> types = builder.modules.stream()
+        .map(Module_::getType)
+        .collect(Collectors.toCollection(() -> EnumSet.noneOf(Module_.Type.class)));
+    for (EnumSet<Module_.Type> set : Module_.PERMITTED_TYPE_SETS) {
+      for (var e : set) {
+        if (types.contains(e)) {
+          for (var f : EnumSet.complementOf(set)) {
+            if (types.contains(f)) {
+              throw new IllegalStateException(
+                  "modules must not contain both types of : " + e + " and " + f);
+            }
+          }
+          break;
+        }
+      }
+    }
     this.modules = builder.modules;
+
+    Objects.requireNonNull(builder.header, "header is necessary");
+    var headerBuilder = new Header.Builder(builder.header);
+    
+    if (types.contains(Module_.Type.WORLD_TEMPLATE) || types.contains(Module_.Type.SKIN_PACK)) {
+      if (builder.header.getMinEngineVersion() != null) {
+        throw new IllegalStateException(
+            "min_engine_version must be null if the type of module is skin_pack or world_template : "
+            + builder.header.getMinEngineVersion());
+      }
+    } else if (builder.formatVersion == 2) {
+      var minEngineVersion = builder.header.getMinEngineVersion();
+      if (minEngineVersion == null) {
+        headerBuilder.minEngineVersion(Header.MIN_MCBE_VERSION);
+      } else if (minEngineVersion.compareTo(Header.MIN_MCBE_VERSION) < 0) {
+        throw new IllegalStateException("min_engine_version must be later than or equal to "
+            + Header.MIN_MCBE_VERSION + " : " + minEngineVersion);
+      }
+    }
+
+    if (types.contains(Module_.Type.WORLD_TEMPLATE)) {
+      if (builder.header.getBaseGameVersion() == null) {
+        headerBuilder.baseGameVersion(Header.MIN_MCBE_VERSION);
+      }
+      if (builder.header.getLockTemplateOptions() == null) {
+        headerBuilder.lockTemplateOptions(Header.DEFAULT_LOCK_TEMPLATE_OPTIONS);
+      }
+    } else {
+      if (builder.header.getBaseGameVersion() != null) {
+        throw new IllegalStateException(
+            "base_game_version must be null if the type of module is not world_template : "
+                + builder.header.getBaseGameVersion());
+      }
+      if (builder.header.getLockTemplateOptions() != null) {
+        throw new IllegalStateException(
+            "lock_template_options must be null if the type of modules is not world_template : "
+                + builder.header.getLockTemplateOptions());
+      }
+    }
+
+    this.header = headerBuilder.build();
+    
     this.dependencies = builder.dependencies;
     this.capabilities = builder.capabilities;
     this.metadata = builder.metadata;

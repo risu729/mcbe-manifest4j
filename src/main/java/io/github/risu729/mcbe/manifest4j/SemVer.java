@@ -17,7 +17,6 @@ public final class SemVer implements Comparable<SemVer> {
   private static final Pattern SEMVER_REGEX = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$");
 
   static final SemVer DEFAULT = of(1, 0, 0);
-  static final SemVer MCBE_DEFAULT = of(1, 13, 0);
 
   public static SemVer of(int major, int minor, int patch) {
     return new SemVer(major, minor, patch);

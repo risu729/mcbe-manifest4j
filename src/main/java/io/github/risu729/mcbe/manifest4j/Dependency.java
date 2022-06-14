@@ -58,17 +58,13 @@ public final class Dependency implements Comparable<Dependency> {
     }
 
     public Dependency build() {
-      Objects.requireNonNull(uuid, "UUID is necessary");
-      if (version == null) {
-        version = SemVer.DEFAULT;
-      }
       return new Dependency(this);
     }
   }
 
   private Dependency(Builder builder) {
-    this.uuid = builder.uuid;
-    this.version = builder.version;
+    this.uuid = Objects.requireNonNull(builder.uuid, "UUID is necessary");
+    this.version = Objects.requireNonNullElse(builder.version, SemVer.DEFAULT);
   }
 
   @Override

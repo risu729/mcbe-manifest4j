@@ -85,17 +85,13 @@ public final class Subpack implements Comparable<Subpack> {
     }
 
     public Subpack build() {
-      Objects.requireNonNull(folderName, "folder_name is necessary");
-      if (name == null) {
-        name = folderName.toString();
-      }
       return new Subpack(this);
     }
   }
 
   private Subpack(Builder builder) {
-    this.folderName = builder.folderName;
-    this.name = builder.name;
+    this.folderName = Objects.requireNonNull(builder.folderName, "folder_name is necessary");
+    this.name = Objects.requireNonNullElseGet(builder.name, builder.folderName::toString);
     this.memoryTier = builder.memoryTier;
   }
 

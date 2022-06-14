@@ -169,46 +169,39 @@ public final class Module_ implements Comparable<Module_> {
     }
 
     public Module_ build() {
-      Objects.requireNonNull(type, "type is necessary");
-      if (uuid == null) {
-        uuid = UUID.randomUUID();
-      }
-      if (version == null) {
-        version = SemVer.DEFAULT;
-      }
-      if (type == Type.SCRIPT) {
-        if (language == null) {
-          language = DEFAULT_LANGUAGE;
-        }
-        Objects.requireNonNull(entry, "entry is necessary when type is script");
-        if (!FileSystems.getDefault()
-            .getPathMatcher("glob:*." + language.getExtension())
-            .matches(entry.getFileName())) {
-          throw new IllegalStateException(
-              "extension of entry must be " + language.getExtension()
-                  + " when language is " + language + " : " + entry);
-        }
-      } else {
-        if (language != null) {
-          throw new IllegalStateException(
-              "language must be null when type is not script");
-        }
-        if (entry != null) {
-          throw new IllegalStateException(
-              "entry must be null when type is not script");
-        }
-      }
       return new Module_(this);
     }
   }
 
   private Module_(Builder builder) {
-    this.type = builder.type;
+    this.type = Objects.requireNonNull(builder.type, "type is necessary");
     this.description = builder.description;
-    this.uuid = builder.uuid;
-    this.version = builder.version;
-    this.language = builder.language;
-    this.entry = builder.entry;
+    this.uuid = Objects.requireNonNullElse(builder.uuid, UUID.randomUUID());
+    this.version = Objects.requireNonNullElse(builder.version, SemVer.DEFAULT);
+    
+    if (builder.type == Type.SCRIPT) {
+      this.language = Objects.requireNonNullElse(builder.language, DEFAULT_LANGUAGE);
+      Objects.requireNonNull(builder.entry, "entry is necessary when type is script");
+      if (!FileSystems.getDefault()
+          .getPathMatcher("glob:*." + language.getExtension())
+          .matches(builder.entry.getFileName())) {
+        throw new IllegalStateException(
+            "extension of entry must be " + language.getExtension()
+                + " when language is " + language + " : " + builder.entry);
+      }
+      this.entry = builder.entry;
+    } else {
+      if (builder.language != null) {
+        throw new IllegalStateException(
+            "language must be null when type is not script");
+      }
+      this.language = null;
+      if (builder.entry != null) {
+        throw new IllegalStateException(
+            "entry must be null when type is not script");
+      }
+      this.entry = null;
+    }
   }
 
   @Override

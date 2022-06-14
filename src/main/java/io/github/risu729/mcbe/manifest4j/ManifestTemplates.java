@@ -10,6 +10,7 @@ package io.github.risu729.mcbe.manifest4j;
 import java.nio.file.Path;
 import java.util.UUID;
 
+@Deprecated
 public class ManifestTemplates {
 
   public static Manifest get(Module_.Type type, boolean isFull) {

@@ -20,8 +20,6 @@ import com.google.gson.TypeAdapterFactory;
 import io.github.risu729.mcbe.manifest4j.Metadata;
 import io.github.risu729.mcbe.manifest4j.SemVer;
 
-import io.github.risu729.mcbe.manifest4j.Metadata;
-
 final class GeneratedWithSetAdapterFactory implements TypeAdapterFactory {
 
   private static final TypeToken<TreeSet<Metadata.GeneratedWith>> GENERATED_WITH_SET = new TypeToken<TreeSet<Metadata.GeneratedWith>>() {
