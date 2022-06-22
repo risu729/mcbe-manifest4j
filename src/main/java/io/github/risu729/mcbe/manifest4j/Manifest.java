@@ -18,6 +18,11 @@ import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
 public final class Manifest {
 
+  public static final Metadata.GeneratedWith MANIFEST4J_GENERATED_WITH =
+      new Metadata.GeneratedWith.Builder().name("manifest4j")
+      .versions(SemVer.of(0, 2, 0))
+      .build();
+
   private static final Integer DEFAULT_FORMAT_VERSION = 2;
   private static final Integer MAX_FORMAT_VERSION = 2;
 
@@ -132,8 +137,7 @@ public final class Manifest {
         Objects.requireNonNull(e, "module must not be null");
       }
       if (this.modules == null) {
-        this.modules = new TreeSet<>(modules);
-        return this;
+        this.modules = new TreeSet<>(Module_.STRICT_COMPARATOR);
       }
       this.modules.addAll(modules);
       return this;
@@ -160,8 +164,7 @@ public final class Manifest {
         Objects.requireNonNull(e, "dependency must not be null");
       }
       if (this.dependencies == null) {
-        this.dependencies = new TreeSet<>(dependencies);
-        return this;
+        this.dependencies = new TreeSet<>(Dependency.STRICT_COMPARATOR);
       }
       this.dependencies.addAll(dependencies);
       return this;
@@ -221,8 +224,7 @@ public final class Manifest {
         Objects.requireNonNull(e, "subpack must not be null");
       }
       if (this.subpacks == null) {
-        this.subpacks = new TreeSet<>(subpacks);
-        return this;
+        this.subpacks = new TreeSet<>(Subpack.STRICT_COMPARATOR);
       }
       this.subpacks.addAll(subpacks);
       return this;
@@ -233,6 +235,7 @@ public final class Manifest {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private Manifest(Builder builder) {
     this.formatVersion = Objects.requireNonNullElse(builder.formatVersion, DEFAULT_FORMAT_VERSION);
 
@@ -253,7 +256,7 @@ public final class Manifest {
         }
       }
     }
-    this.modules = builder.modules;
+    this.modules = (TreeSet<Module_>) builder.modules.clone();
 
     Objects.requireNonNull(builder.header, "header is necessary");
     var headerBuilder = new Header.Builder(builder.header);
@@ -295,11 +298,23 @@ public final class Manifest {
     }
 
     this.header = headerBuilder.build();
-    
-    this.dependencies = builder.dependencies;
-    this.capabilities = builder.capabilities;
+
+    if (builder.dependencies == null) {
+      this.dependencies = null;
+    } else {
+      this.dependencies = (TreeSet<Dependency>) builder.dependencies.clone();
+    }
+    if (builder.capabilities == null) {
+      this.capabilities = null;
+    } else {
+      this.capabilities = builder.capabilities.clone();
+    }
     this.metadata = builder.metadata;
-    this.subpacks = builder.subpacks;
+    if (builder.subpacks == null) {
+      this.subpacks = null;
+    } else {
+      this.subpacks = (TreeSet<Subpack>) builder.subpacks.clone();
+    }
   }
 
   @Override
@@ -308,12 +323,26 @@ public final class Manifest {
       return true;
     }
     return (obj instanceof Manifest other)
-        && Objects.equals(header, other.header);
+        && Objects.equals(formatVersion, other.formatVersion)
+        && Objects.equals(header, other.header)
+        && Objects.equals(modules, other.modules)
+        && Objects.equals(dependencies, other.dependencies)
+        && Objects.equals(capabilities, other.capabilities)
+        && Objects.equals(metadata, other.metadata)
+        && Objects.equals(subpacks, other.subpacks);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(header);
+    int hash = 1;
+    hash = hash * 31 + Objects.hashCode(formatVersion);
+    hash = hash * 31 + Objects.hashCode(header);
+    hash = hash * 31 + Objects.hashCode(modules);
+    hash = hash * 31 + Objects.hashCode(dependencies);
+    hash = hash * 31 + Objects.hashCode(capabilities);
+    hash = hash * 31 + Objects.hashCode(metadata);
+    hash = hash * 31 + Objects.hashCode(subpacks);
+    return hash;
   }
 
   @Override

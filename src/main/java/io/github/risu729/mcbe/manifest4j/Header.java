@@ -178,15 +178,30 @@ public final class Header {
       return true;
     }
     return (obj instanceof Header other)
+        && Objects.equals(name, other.name)
+        && Objects.equals(description, other.description)
         && Objects.equals(uuid, other.uuid)
-        && Objects.equals(version, other.version);
+        && Objects.equals(version, other.version)
+        && Objects.equals(minEngineVersion, other.minEngineVersion)
+        && Objects.equals(platformLocked, other.platformLocked)
+        && packScope == other.packScope
+        && Objects.equals(baseGameVersion, other.baseGameVersion)
+        && Objects.equals(lockTemplateOptions, other.lockTemplateOptions);
+      
   }
 
   @Override
   public int hashCode() {
     int hash = 1;
+    hash = hash * 31 + Objects.hashCode(name);
+    hash = hash * 31 + Objects.hashCode(description);
     hash = hash * 31 + Objects.hashCode(uuid);
     hash = hash * 31 + Objects.hashCode(version);
+    hash = hash * 31 + Objects.hashCode(minEngineVersion);
+    hash = hash * 31 + Objects.hashCode(platformLocked);
+    hash = hash * 31 + Objects.hashCode(packScope);
+    hash = hash * 31 + Objects.hashCode(baseGameVersion);
+    hash = hash * 31 + Objects.hashCode(lockTemplateOptions);
     return hash;
   }
 

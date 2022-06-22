@@ -9,6 +9,7 @@ package io.github.risu729.mcbe.manifest4j;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -26,6 +27,15 @@ public final class Module_ implements Comparable<Module_> {
       EnumSet.of(Type.SKIN_PACK));
 
   private static final Language DEFAULT_LANGUAGE = Language.JAVASCRIPT;
+
+  static final Comparator<Module_> STRICT_COMPARATOR =
+      Comparator.comparing(Module_::getUUID, Comparator.nullsFirst(Comparator.naturalOrder()));
+  private static final Comparator<Module_> COMPARATOR = STRICT_COMPARATOR
+      .thenComparing(Module_::getType, Comparator.nullsFirst(Comparator.naturalOrder()))
+      .thenComparing(Module_::getVersion, Comparator.nullsFirst(Comparator.naturalOrder()))
+      .thenComparing(Module_::getLanguage, Comparator.nullsFirst(Comparator.naturalOrder()))
+      .thenComparing(Module_::getEntry, Comparator.nullsFirst(Comparator.naturalOrder()))
+      .thenComparing(Module_::getDescription, Comparator.nullsFirst(Comparator.naturalOrder()));
 
   // necessary
   // DATA, CLIENT_DATA, INTERFACE, and SCRIPT can be put in the same pack
@@ -206,12 +216,7 @@ public final class Module_ implements Comparable<Module_> {
 
   @Override
   public int compareTo(Module_ other) {
-    if (equals(other)) {
-      return 0;
-    }
-    return type != other.type ? type.compareTo(other.type)
-        : uuid.equals(other.uuid) ? uuid.compareTo(other.uuid)
-            : version.compareTo(other.version);
+    return COMPARATOR.compare(this, other);
   }
 
   @Override
@@ -220,15 +225,23 @@ public final class Module_ implements Comparable<Module_> {
       return true;
     }
     return (obj instanceof Module_ other)
+        && type == other.type
+        && Objects.equals(description, other.description)
         && Objects.equals(uuid, other.uuid)
-        && Objects.equals(version, other.version);
+        && Objects.equals(version, other.version)
+        && language == other.language
+        && Objects.equals(entry, other.entry);
   }
 
   @Override
   public int hashCode() {
     int hash = 1;
+    hash = hash * 31 + Objects.hashCode(type);
+    hash = hash * 31 + Objects.hashCode(description);
     hash = hash * 31 + Objects.hashCode(uuid);
     hash = hash * 31 + Objects.hashCode(version);
+    hash = hash * 31 + Objects.hashCode(language);
+    hash = hash * 31 + Objects.hashCode(entry);
     return hash;
   }
 

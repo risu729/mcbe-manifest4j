@@ -8,12 +8,19 @@
 package io.github.risu729.mcbe.manifest4j;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
 public final class Subpack implements Comparable<Subpack> {
+
+  static final Comparator<Subpack> STRICT_COMPARATOR =
+      Comparator.comparing(Subpack::getFolderName, Comparator.nullsFirst(Comparator.naturalOrder()));
+  private static final Comparator<Subpack> COMPARATOR = STRICT_COMPARATOR
+      .thenComparing(Subpack::getName, Comparator.nullsFirst(Comparator.naturalOrder()))
+      .thenComparing(Subpack::getMemoryTier, Comparator.nullsFirst(Comparator.naturalOrder()));
 
   private final Path folderName; // necessary
   private final String name; // necessary
@@ -97,11 +104,7 @@ public final class Subpack implements Comparable<Subpack> {
 
   @Override
   public int compareTo(Subpack other) {
-    if (equals(other)) {
-      return 0;
-    }
-    return !name.equals(other.name) ? name.compareTo(other.name)
-        : folderName.compareTo(other.folderName);
+    return COMPARATOR.compare(this, other);
   }
 
   @Override
@@ -110,12 +113,18 @@ public final class Subpack implements Comparable<Subpack> {
       return true;
     }
     return (obj instanceof Subpack other)
-        && Objects.equals(folderName, other.folderName);
+        && Objects.equals(folderName, other.folderName)
+        && Objects.equals(name, other.name)
+        && Objects.equals(memoryTier, other.memoryTier);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(folderName);
+    int hash = 1;
+    hash = hash * 31 + Objects.hashCode(folderName);
+    hash = hash * 31 + Objects.hashCode(name);
+    hash = hash * 31 + Objects.hashCode(memoryTier);
+    return hash;
   }
 
   @Override

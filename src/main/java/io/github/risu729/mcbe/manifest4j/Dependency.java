@@ -7,12 +7,18 @@
 
 package io.github.risu729.mcbe.manifest4j;
 
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
 import io.github.risu729.mcbe.manifest4j.gson.ManifestGson;
 
 public final class Dependency implements Comparable<Dependency> {
+
+  static final Comparator<Dependency> STRICT_COMPARATOR =
+      Comparator.comparing(Dependency::getUUID, Comparator.nullsFirst(Comparator.naturalOrder()));
+  private static final Comparator<Dependency> COMPARATOR = STRICT_COMPARATOR
+      .thenComparing(Dependency::getVersion, Comparator.nullsFirst(Comparator.naturalOrder()));
 
   private final UUID uuid; // necessary
   private final SemVer version; // necessary
@@ -69,7 +75,7 @@ public final class Dependency implements Comparable<Dependency> {
 
   @Override
   public int compareTo(Dependency other) {
-    return uuid.compareTo(other.uuid);
+    return COMPARATOR.compare(this, other);
   }
 
   @Override
@@ -78,12 +84,16 @@ public final class Dependency implements Comparable<Dependency> {
       return true;
     }
     return (obj instanceof Dependency other)
-        && Objects.equals(uuid, other.uuid);
+        && Objects.equals(uuid, other.uuid)
+        && Objects.equals(version, other.version);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(uuid);
+    int hash = 1;
+    hash = hash * 31 + Objects.hashCode(uuid);
+    hash = hash * 31 + Objects.hashCode(version);
+    return hash;
   }
 
   @Override

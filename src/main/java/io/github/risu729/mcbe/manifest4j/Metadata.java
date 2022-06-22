@@ -9,7 +9,9 @@ package io.github.risu729.mcbe.manifest4j;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.Set;
@@ -43,21 +45,23 @@ public final class Metadata {
   }
 
   public static final class GeneratedWith implements Comparable<GeneratedWith> {
-
-    private static final GeneratedWith MANIFEST4J = new Builder().name("manifest4j")
-        .versions(SemVer.of(0, 2, 0))
-        .build();
     
     private static final TreeSet<SemVer> DEFAULT_VERSIONS = new TreeSet<>(Set.of(SemVer.DEFAULT));
+
+    static final Comparator<GeneratedWith> STRICT_COMPARATOR =
+        Comparator.comparing(GeneratedWith::getName, Comparator.nullsFirst(Comparator.naturalOrder()));
+    private static final Comparator<GeneratedWith> COMPARATOR = STRICT_COMPARATOR
+        .thenComparing(GeneratedWith::getVersions, Comparator.nullsFirst(new Comparator<TreeSet<SemVer>> () {
+          @Override
+          public int compare(TreeSet<SemVer> o1, TreeSet<SemVer> o2) {
+            return Arrays.compare(o1.toArray(new SemVer[o1.size()]), o2.toArray(new SemVer[o2.size()]));
+          }
+        }));
     
     // necessary, must be 32 characters maximum
     // must contain only alphabets, numbers, underscores, and hyphens
     private final String name;
     private final TreeSet<SemVer> versions; // necessary at least one
-
-    public static GeneratedWith getManifest4j() {
-      return MANIFEST4J;
-    }
 
     public String getName() {
       return name;
@@ -123,22 +127,23 @@ public final class Metadata {
       }
 
       public GeneratedWith build() {
-        Objects.requireNonNull(name, "name must not be null");
-        if (versions == null) {
-          versions = DEFAULT_VERSIONS;
-        }
         return new GeneratedWith(this);
       }
     }
 
+    @SuppressWarnings("unchecked")
     private GeneratedWith(Builder builder) {
-      this.name = builder.name;
-      this.versions = builder.versions;
+      this.name = Objects.requireNonNull(builder.name, "name must not be null");
+      if (builder.versions == null) {
+        this.versions = DEFAULT_VERSIONS;
+      } else {
+        this.versions = (TreeSet<SemVer>) builder.versions.clone(); 
+      }
     }
 
     @Override
     public int compareTo(GeneratedWith other) {
-      return name.compareTo(other.name);
+      return COMPARATOR.compare(this, other);
     }
 
     @Override
@@ -147,12 +152,16 @@ public final class Metadata {
         return true;
       }
       return (obj instanceof GeneratedWith other)
-          && Objects.equals(name, other.name);
+          && Objects.equals(name, other.name)
+          && Objects.equals(versions, other.versions);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(name);
+      int hash = 1;
+      hash = hash * 31 + Objects.hashCode(name);
+      hash = hash * 31 + Objects.hashCode(versions);
+      return hash;
     }
 
     @Override
@@ -162,6 +171,7 @@ public final class Metadata {
   }
 
   public static class Builder {
+    
     private TreeSet<String> authors;
     private URL url;
     private String license;
@@ -244,8 +254,7 @@ public final class Metadata {
         Objects.requireNonNull(e, "generated_with must not be null");
       }
       if (this.generatedWith == null) {
-        this.generatedWith = new TreeSet<>(generatedWith);
-        return this;
+        this.generatedWith = new TreeSet<>(GeneratedWith.STRICT_COMPARATOR);
       }
       this.generatedWith.addAll(generatedWith);
       return this;
@@ -256,11 +265,20 @@ public final class Metadata {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private Metadata(Builder builder) {
-    this.authors = builder.authors;
+    if (builder.authors == null) {
+      this.authors = null;
+    } else {
+      this.authors = (TreeSet<String>) builder.authors.clone();
+    }
     this.url = builder.url;
     this.license = builder.license;
-    this.generatedWith = builder.generatedWith;
+    if (builder.generatedWith == null) {
+      this.generatedWith = null;
+    } else {
+      this.generatedWith = (TreeSet<GeneratedWith>) builder.generatedWith.clone();
+    }
   }
 
   @Override
