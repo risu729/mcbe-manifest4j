@@ -61,6 +61,7 @@ public class ManifestTemplates {
                   .versions(SemVer.of(0, 0, 0))
                   .addVersions(SemVer.of(1, 0, 0))
                   .build())
+              .addGeneratedWith(Manifest.MANIFEST4J_GENERATED_WITH)
               .build())
           .subpacks(new Subpack.Builder()
               .folderName(Path.of("Alpha"))
