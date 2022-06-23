@@ -267,7 +267,7 @@ public final class Manifest {
             "min_engine_version must be null if the type of module is skin_pack or world_template : "
             + builder.header.getMinEngineVersion());
       }
-    } else if (builder.formatVersion == 2) {
+    } else if (this.formatVersion == 2) {
       var minEngineVersion = builder.header.getMinEngineVersion();
       if (minEngineVersion == null) {
         headerBuilder.minEngineVersion(Header.MIN_MCBE_VERSION);
