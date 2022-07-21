@@ -95,4 +95,12 @@
       </plugin>
     </plugins>
   </build>
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/risu729/${project.artifactId}</url>
+    </repository>
+  </distributionManagement>
 </project>
