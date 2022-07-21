@@ -20,7 +20,7 @@ public final class Manifest {
 
   public static final Metadata.GeneratedWith MANIFEST4J_GENERATED_WITH =
       new Metadata.GeneratedWith.Builder().name("manifest4j")
-      .versions(SemVer.of(0, 3, 2))
+      .versions(SemVer.of(0, 6, 0))
       .build();
 
   private static final Integer DEFAULT_FORMAT_VERSION = 2;

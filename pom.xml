@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.github.risu729</groupId>
   <artifactId>mcbe-manifest4j</artifactId>
-  <version>0.5.0</version>
-  <packaging>jar</packaging>
+  <version>0.6.0</version>
 
   <name>${project.artifactId}</name>
   <url>https://github.com/risu729/${project.artifactId}</url>
@@ -14,6 +15,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <javaVersion>17</javaVersion>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
   </properties>
 
   <licenses>
@@ -28,8 +31,6 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.9.0</version>
-      <type>jar</type>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 
@@ -40,21 +41,12 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.10.1</version>
-        <configuration>
-          <release>${javaVersion}</release>
-          <jdkToolchain>
-            <version>[17,)</version>
-          </jdkToolchain>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.4.0</version>
         <configuration>
-          <jdkToolchain>
-            <version>[17,)</version>
-          </jdkToolchain>
           <doclint>all,-missing</doclint>
           <detectJavaApiLink>false</detectJavaApiLink>
           <links>
